@@ -40,7 +40,7 @@ public class ForumService {
 	public ForumDto getForum(Long id) {
 		Optional<Forum> forumOptional = forumRepository.findById(id);
 		forumOptional.orElseThrow(() -> new ForumException("Cannot find forum with id: " + id));
-		return ForumDtoMapper.mapToDto(forumOptional.get());
+		return ForumDtoMapper.mapToDtoWithPosts(forumOptional.get());
 	}
 
 	@Transactional(readOnly = true)

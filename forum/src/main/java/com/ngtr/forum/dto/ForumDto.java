@@ -1,10 +1,15 @@
 package com.ngtr.forum.dto;
 
+import java.util.List;
+
+import com.ngtr.forum.model.Post;
+
 public class ForumDto {
 	private Long id;
 	private String name;
 	private String description;
 	private Integer numberOfPosts;
+	private List<Post> posts;
 	
 	public Long getId() {
 		return id;
@@ -29,5 +34,11 @@ public class ForumDto {
 	}
 	public void setNumberOfPosts(Integer numberOfPosts) {
 		this.numberOfPosts = numberOfPosts;
+	}
+	public List<Post> getPosts() {
+		return posts;
+	}
+	public void setPosts(List<Post> posts) {
+		this.posts = posts;
 	}
 }
