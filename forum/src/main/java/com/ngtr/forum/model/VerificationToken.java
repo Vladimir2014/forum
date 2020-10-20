@@ -23,7 +23,6 @@ import lombok.NoArgsConstructor;
 @Table(name="token")
 public class VerificationToken {
 
-
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
@@ -34,6 +33,8 @@ public class VerificationToken {
 	private User user;
 	
 	private Instant expirationDate;
+	
+	private int verificationTokenTypeEnumId;
 
 	public Long getId() {
 		return id;
@@ -65,5 +66,18 @@ public class VerificationToken {
 	
 	public void setExpirationDate(Instant expirationDate) {
 		this.expirationDate = expirationDate;
+	}
+
+	public int getVerificationTokenTypeEnumId() {
+		return verificationTokenTypeEnumId;
+	}
+
+	public void setVerificationTokenTypeEnumId(int verificationTokenTypeEnumId) {
+		this.verificationTokenTypeEnumId = verificationTokenTypeEnumId;
+	}
+	
+	public boolean isExpired() {
+		return null != expirationDate && Instant.now().isBefore(expirationDate);
+		
 	}
 }

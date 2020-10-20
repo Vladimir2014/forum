@@ -11,5 +11,7 @@ import com.ngtr.forum.model.VerificationToken;
 public interface VerificationTokenRepository extends JpaRepository<VerificationToken, Long> {
 
 	public Optional<VerificationToken> findByToken(String token);
+	
+	public Optional<VerificationToken> findByTokenAndVerificationTokenTypeEnumId(String token, int verificationTokenTypeEnumId);
 
 }

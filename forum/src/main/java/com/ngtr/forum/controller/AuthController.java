@@ -3,6 +3,7 @@ package com.ngtr.forum.controller;
 import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.ngtr.forum.dto.AuthenticationResponse;
 import com.ngtr.forum.dto.LoginRequest;
+import com.ngtr.forum.dto.PasswordResetVerificationCodeRequest;
 import com.ngtr.forum.dto.RefreshTokenRequest;
 import com.ngtr.forum.dto.RegisterRequest;
 import com.ngtr.forum.service.AuthService;
@@ -22,6 +24,8 @@ import com.ngtr.forum.service.RefreshTokenService;
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
+	@Value("${domain}")
+	private String domain;
 	
 	@Autowired
 	private AuthService authService;
@@ -38,9 +42,19 @@ public class AuthController {
 	@GetMapping("/accountVerification/{token}")
 	public ResponseEntity<String> verifyAccount(@PathVariable("token") String token) {
 		authService.verifyAccount(token);
-		return new ResponseEntity<>("Account activated", HttpStatus.OK);
+		return new ResponseEntity<>(getAccountActivatedHtml(), HttpStatus.OK);
 	}
 	
+	private String getAccountActivatedHtml() {
+		StringBuffer sb = new StringBuffer();
+		sb.append("<br/>");
+		sb.append("Your account has been activated");
+		sb.append("<br/><br/>");
+		sb.append("You can now now <a href=\"" + domain + "login\">login</a> to your account");
+		
+		return sb.toString();
+	}
+
 	@PostMapping("/login")
 	public AuthenticationResponse login(@RequestBody LoginRequest loginRequest) throws Exception {
 		return authService.login(loginRequest);
@@ -58,6 +72,26 @@ public class AuthController {
 		return ResponseEntity
 				.status(HttpStatus.OK)
 				.body("Refresh token deleted")
+				;
+	}
+	
+	@PostMapping("/code/send")
+	public ResponseEntity<String> sendVerificationCode(@RequestBody String username) {
+		
+		authService.sendVerificationCode(username);
+		return ResponseEntity
+				.status(HttpStatus.OK)
+				.body("Verification code sent")
+				;
+	}
+	
+	@PostMapping("/code/verify")
+	public ResponseEntity<String> verifyPasswordResetCode(@RequestBody PasswordResetVerificationCodeRequest passwordResetVerificationCodeRequest) {
+		
+		authService.verifyPasswordResetCode(passwordResetVerificationCodeRequest);
+		return ResponseEntity
+				.status(HttpStatus.OK)
+				.body("Verification code verified")
 				;
 	}
 }
