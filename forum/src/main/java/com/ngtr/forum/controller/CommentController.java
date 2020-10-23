@@ -37,11 +37,11 @@ public class CommentController {
 				.body(commentService.getAllCommentsForPost(postId));
 	}
 	
-	@GetMapping("/by-user/{userId}")
-	public ResponseEntity<List<CommentDto>> getCommentsByUserId(@PathVariable Long userId) {
+	@GetMapping("/by-user/{username}")
+	public ResponseEntity<List<CommentDto>> getCommentsByUserName(@PathVariable String username) {
 		return ResponseEntity
 				.status(HttpStatus.OK)
-				.body(commentService.getCommentsByUserId(userId));
+				.body(commentService.getCommentsByUserName(username));
 	}
 	
 	

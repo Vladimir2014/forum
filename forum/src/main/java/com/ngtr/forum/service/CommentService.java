@@ -73,8 +73,8 @@ public class CommentService {
 	}
 
 	@Transactional(readOnly=true)
-	public List<CommentDto> getCommentsByUserId(Long userId) {
-		User user = userRepository.getOne(userId);
+	public List<CommentDto> getCommentsByUserName(String username) {
+		User user = userRepository.findByUsername(username).orElseThrow(() -> new ForumException("Unknown user: " + username));
 		
 		List<Comment> comments = commentRepository.findByUser(user);
 		

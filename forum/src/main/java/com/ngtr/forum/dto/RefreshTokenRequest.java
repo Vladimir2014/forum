@@ -5,7 +5,7 @@ import javax.validation.constraints.NotBlank;
 public class RefreshTokenRequest {
 	@NotBlank
 	private String refreshToken;
-	private Long userId;
+	private String username;
 	
 	public String getRefreshToken() {
 		return refreshToken;
@@ -13,11 +13,10 @@ public class RefreshTokenRequest {
 	public void setRefreshToken(String refreshToken) {
 		this.refreshToken = refreshToken;
 	}
-	public Long getUserId() {
-		return userId;
+	public String getUsername() {
+		return username;
 	}
-	public void setUserId(Long userId) {
-		this.userId = userId;
+	public void setUsername(String username) {
+		this.username = username;
 	}
-
 }

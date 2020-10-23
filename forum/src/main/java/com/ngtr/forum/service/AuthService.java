@@ -12,7 +12,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -120,21 +119,20 @@ public class AuthService {
 
 	@Transactional (readOnly = true)
 	public User getCurrentUser() {
-		UserDetails userDetails = (UserDetails)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-		return userRepository.findByUsername(userDetails.getUsername()).orElseThrow(() -> new ForumException("User not found"));
+		org.springframework.security.core.userdetails.User principal = (org.springframework.security.core.userdetails.User)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+		return userRepository.findByUsername(principal.getUsername()).orElseThrow(() -> new ForumException("User not found"));
 	}
 
 	public AuthenticationResponse refreshToken(@Valid RefreshTokenRequest refreshTokenRequest) {
 		refreshTokenService.validateToken(refreshTokenRequest.getRefreshToken());
 		
-		User authenticatedUser = getCurrentUser();
-		String token = jwtProvider.generateToken(authenticatedUser.getUsername());
+		String token = jwtProvider.generateToken(refreshTokenRequest.getUsername());
 				
 		AuthenticationResponse authenticationResponse = new AuthenticationResponse();
 		authenticationResponse.setAuthenticationToken(token);
 		authenticationResponse.setExpiresAt(Instant.now().plusMillis(jwtProvider.getJwtExpirationInMillis()));
 		authenticationResponse.setRefreshToken(refreshTokenRequest.getRefreshToken());
-		authenticationResponse.setUsername(authenticatedUser.getUsername());
+		authenticationResponse.setUsername(refreshTokenRequest.getUsername());
 		
 		return authenticationResponse;
 	}
