@@ -23,7 +23,6 @@ import com.ngtr.forum.dto.PasswordResetVerificationCodeRequest;
 import com.ngtr.forum.dto.RefreshTokenRequest;
 import com.ngtr.forum.dto.RegisterRequest;
 import com.ngtr.forum.exception.ForumException;
-import com.ngtr.forum.model.NotificationEmail;
 import com.ngtr.forum.model.User;
 import com.ngtr.forum.model.VerificationToken;
 import com.ngtr.forum.repository.UserRepository;
@@ -56,7 +55,8 @@ public class AuthService {
 
 	@Transactional
 	public void signup(RegisterRequest registerRequest)
-	throws Exception {
+	  throws Exception 
+	{
 		User user = new User();
 		user.setUsername(registerRequest.getUsername());
 		user.setEmail(registerRequest.getEmail());
@@ -66,11 +66,8 @@ public class AuthService {
 		
 		userRepository.save(user);
 		
-		String token = generateVerificationToken(user);
-		
-		mailService.sendMail(new NotificationEmail("Please Activate your account",
-				user.getEmail(),
-				"http://localhost:8081/api/auth/accountVerification/" + token));
+		mailService.sendActivationEmail(user.getEmail(), 
+										generateVerificationToken(user));
 	}
 
 	@Transactional
@@ -143,20 +140,11 @@ public class AuthService {
 				&& authentication.isAuthenticated();
 	}
 
-	public boolean sendVerificationCode(String username) {
-		Optional<User> user = userRepository.findByUsername(username);
+	public void sendVerificationCode(String username) {
+		User user = userRepository.findByUsername(username).orElseThrow(() -> new ForumException("User not found"));
 		
-		if (user.isPresent()) {
-			String code = generateVerificationTokenForPasswordReset(user.get());
-			
-			mailService.sendMail(new NotificationEmail("Password reset verification code",
-														user.get().getEmail(),
-														"Verification code: " + code));					
-			
-			return true;
-		}
-		
-		throw new ForumException("Unable to find user: " + username);
+		mailService.sendPasswordResetConfirmationCodeEmail(user.getEmail(), 
+														   generateVerificationTokenForPasswordReset(user));
 	}
 	
 	@Transactional
@@ -184,17 +172,15 @@ public class AuthService {
 	@Transactional
 	public boolean verifyPasswordResetCode(PasswordResetVerificationCodeRequest passwordResetVerificationCodeRequest) {
 		String username = passwordResetVerificationCodeRequest.getUsername();
-		Optional<VerificationToken> verificationToken = verificationTokenRepository.findByTokenAndVerificationTokenTypeEnumId(passwordResetVerificationCodeRequest.getCode()+"", 																																VerificationTokenTypeEnum.PASSWORD_RESET.getId());
-		verificationToken.orElseThrow(() -> new ForumException("Invalid token"));
+		VerificationToken verificationToken = (verificationTokenRepository
+											   .findByTokenAndVerificationTokenTypeEnumId(String.valueOf(passwordResetVerificationCodeRequest.getCode()), 
+																						  VerificationTokenTypeEnum.PASSWORD_RESET.getId())
+											   .orElseThrow(() -> new ForumException("Invalid token")));
 		
-		if (verificationToken.get().getUser().getUsername().equals(username)) {
+		if (verificationToken.getUser().getUsername().equals(username)) {
 			return true;
 		}
 		
 		throw new ForumException("Invalid token");
 	}
-	
-
-
-
 }
