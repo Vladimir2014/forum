@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
+import javax.mail.MessagingException;
 import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -67,11 +68,11 @@ public class AuthService {
 		userRepository.save(user);
 		
 		mailService.sendActivationEmail(user.getEmail(), 
-										generateVerificationToken(user));
+										generateAccountVerificationToken(user));
 	}
 
 	@Transactional
-	private String generateVerificationToken(User user) {
+	private String generateAccountVerificationToken(User user) {
 		String token = UUID.randomUUID().toString();
 		
 		VerificationToken verificationToken = new VerificationToken();
@@ -90,15 +91,6 @@ public class AuthService {
 		Optional<VerificationToken> verificationToken = verificationTokenRepository.findByToken(token);
 		verificationToken.orElseThrow(() -> new ForumException("Invalid token"));
 		fetchUserAndEnable(verificationToken.get());
-	}
-
-	@Transactional
-	private void fetchUserAndEnable(VerificationToken verificationToken) {
-		if (verificationToken.isExpired()) throw new ForumException("Token Expired");
-		Long userId = verificationToken.getUser().getUserId();
-		User user = userRepository.findById(userId).orElseThrow(() -> new ForumException("User not found"));
-		user.setEnabled(true);
-		userRepository.save(user);
 	}
 
 	public AuthenticationResponse login(LoginRequest loginRequest) {
@@ -140,37 +132,16 @@ public class AuthService {
 				&& authentication.isAuthenticated();
 	}
 
-	public void sendVerificationCode(String username) {
+	public void sendVerificationCodeForPasswordReset(String username) throws MessagingException {
 		User user = userRepository.findByUsername(username).orElseThrow(() -> new ForumException("User not found"));
 		
-		mailService.sendPasswordResetConfirmationCodeEmail(user.getEmail(), 
+		mailService.sendPasswordResetConfirmationCodeEmail(user.getUsername(),
+														   user.getEmail(), 
 														   generateVerificationTokenForPasswordReset(user));
 	}
 	
 	@Transactional
-	private String generateVerificationTokenForPasswordReset(User user) {
-		String token = UUID.randomUUID().toString();
-		
-		VerificationToken verificationToken = new VerificationToken();
-		verificationToken.setToken(generatePasswordResetVerificationCode() + "");
-		verificationToken.setUser(user);
-		verificationToken.setVerificationTokenTypeEnumId(VerificationTokenTypeEnum.PASSWORD_RESET.getId());
-		verificationToken.setExpirationDate(Instant.now().plusSeconds(600));
-		
-		verificationTokenRepository.save(verificationToken);
-		
-		return token;
-	}
-
-	private int generatePasswordResetVerificationCode() {
-		int min = 10000;
-		int max = 99999;
-	
-		return (int)(Math.random() * (max - min + 1) + min);
-	}
-
-	@Transactional
-	public boolean verifyPasswordResetCode(PasswordResetVerificationCodeRequest passwordResetVerificationCodeRequest) {
+	public boolean verifyCodeForPasswordReset(PasswordResetVerificationCodeRequest passwordResetVerificationCodeRequest) {
 		String username = passwordResetVerificationCodeRequest.getUsername();
 		VerificationToken verificationToken = (verificationTokenRepository
 											   .findByTokenAndVerificationTokenTypeEnumId(String.valueOf(passwordResetVerificationCodeRequest.getCode()), 
@@ -182,5 +153,36 @@ public class AuthService {
 		}
 		
 		throw new ForumException("Invalid token");
+	}
+
+	@Transactional
+	private void fetchUserAndEnable(VerificationToken verificationToken) {
+		if (verificationToken.isExpired()) throw new ForumException("Token Expired");
+		Long userId = verificationToken.getUser().getUserId();
+		User user = userRepository.findById(userId).orElseThrow(() -> new ForumException("User not found"));
+		user.setEnabled(true);
+		userRepository.save(user);
+	}
+
+	@Transactional
+	private String generateVerificationTokenForPasswordReset(User user) {
+		String token = String.valueOf(generateVerificationCodeForPasswordReset());
+		
+		VerificationToken verificationToken = new VerificationToken();
+		verificationToken.setToken(token);
+		verificationToken.setUser(user);
+		verificationToken.setVerificationTokenTypeEnumId(VerificationTokenTypeEnum.PASSWORD_RESET.getId());
+		verificationToken.setExpirationDate(Instant.now().plusSeconds(600));
+		
+		verificationTokenRepository.save(verificationToken);
+		
+		return token;
+	}
+	
+	private int generateVerificationCodeForPasswordReset() {
+		int min = 10000;
+		int max = 99999;
+		
+		return (int)(Math.random() * (max - min + 1) + min);
 	}
 }

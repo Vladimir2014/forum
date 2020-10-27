@@ -1,5 +1,6 @@
 package com.ngtr.forum.controller;
 
+import javax.mail.MessagingException;
 import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -76,19 +77,26 @@ public class AuthController {
 	}
 	
 	@PostMapping("/code/send")
-	public ResponseEntity<String> sendVerificationCode(@RequestBody String username) {
+	public ResponseEntity<String> sendVerificationCodeForPasswordReset(@RequestBody String username) {
 		
-		authService.sendVerificationCode(username);
-		return ResponseEntity
-				.status(HttpStatus.OK)
-				.body("Verification code sent")
-				;
+		try {
+			authService.sendVerificationCodeForPasswordReset(username);
+			return ResponseEntity
+					.status(HttpStatus.OK)
+					.body("Verification code sent")
+					;
+		} catch (MessagingException e) {
+			e.printStackTrace();
+			return ResponseEntity
+					.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body("");
+		}
 	}
 	
 	@PostMapping("/code/verify")
-	public ResponseEntity<String> verifyPasswordResetCode(@RequestBody PasswordResetVerificationCodeRequest passwordResetVerificationCodeRequest) {
+	public ResponseEntity<String> verifyCodeForPasswordReset(@RequestBody PasswordResetVerificationCodeRequest passwordResetVerificationCodeRequest) {
 		
-		authService.verifyPasswordResetCode(passwordResetVerificationCodeRequest);
+		authService.verifyCodeForPasswordReset(passwordResetVerificationCodeRequest);
 		return ResponseEntity
 				.status(HttpStatus.OK)
 				.body("Verification code verified")
