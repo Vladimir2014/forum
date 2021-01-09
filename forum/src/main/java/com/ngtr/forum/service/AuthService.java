@@ -140,19 +140,36 @@ public class AuthService {
 														   generateVerificationTokenForPasswordReset(user));
 	}
 	
-	@Transactional
-	public boolean verifyCodeForPasswordReset(PasswordResetVerificationCodeRequest passwordResetVerificationCodeRequest) {
+	@Transactional(readOnly=true)
+	public void verifyCodeForPasswordReset(PasswordResetVerificationCodeRequest passwordResetVerificationCodeRequest) {
+		VerificationToken verificationToken = getVerifyCodeForPasswordReset(passwordResetVerificationCodeRequest);
 		String username = passwordResetVerificationCodeRequest.getUsername();
-		VerificationToken verificationToken = (verificationTokenRepository
-											   .findByTokenAndVerificationTokenTypeEnumId(String.valueOf(passwordResetVerificationCodeRequest.getCode()), 
-																						  VerificationTokenTypeEnum.PASSWORD_RESET.getId())
-											   .orElseThrow(() -> new ForumException("Invalid token")));
 		
-		if (verificationToken.getUser().getUsername().equals(username)) {
-			return true;
+		if (!verificationToken.getUser().getUsername().equals(username)) {
+			throw new ForumException("Invalid token");
+		}
+	}
+	
+	@Transactional
+	public void resetPassword(PasswordResetVerificationCodeRequest passwordResetVerificationCodeRequest) {
+		VerificationToken verificationToken = getVerifyCodeForPasswordReset(passwordResetVerificationCodeRequest);
+		String username = passwordResetVerificationCodeRequest.getUsername();
+		
+		if (!verificationToken.getUser().getUsername().equals(username)) {
+			throw new ForumException("Invalid token");
 		}
 		
-		throw new ForumException("Invalid token");
+		verificationToken.getUser().setPassword(passwordEncoder.encode(passwordResetVerificationCodeRequest.getPassword()));
+		verificationTokenRepository.deleteAllTokens(verificationToken.getUser(), VerificationTokenTypeEnum.PASSWORD_RESET.getId());
+	}
+	
+	@Transactional(readOnly=true)
+	private VerificationToken getVerifyCodeForPasswordReset(PasswordResetVerificationCodeRequest passwordResetVerificationCodeRequest) {
+		return (verificationTokenRepository
+			    .findByTokenAndVerificationTokenTypeEnumId(String.valueOf(passwordResetVerificationCodeRequest.getCode()), 
+														   VerificationTokenTypeEnum.PASSWORD_RESET.getId())
+			    .orElseThrow(() -> new ForumException("Invalid token")));
+		
 	}
 
 	@Transactional
@@ -185,4 +202,5 @@ public class AuthService {
 		
 		return (int)(Math.random() * (max - min + 1) + min);
 	}
+
 }

@@ -1,5 +1,7 @@
 package com.ngtr.forum.dto;
 
+import com.ngtr.forum.constraint.ValidPassword;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,6 +14,7 @@ import lombok.NoArgsConstructor;
 public class RegisterRequest {
 	private String email;
 	private String username;
+	@ValidPassword
 	private String password;
 	
 	public String getEmail() {

@@ -15,10 +15,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ngtr.forum.dto.AuthenticationResponse;
+import com.ngtr.forum.dto.CurrentUserDetails;
 import com.ngtr.forum.dto.LoginRequest;
 import com.ngtr.forum.dto.PasswordResetVerificationCodeRequest;
 import com.ngtr.forum.dto.RefreshTokenRequest;
 import com.ngtr.forum.dto.RegisterRequest;
+import com.ngtr.forum.dtoMapper.CurrentUserDetailsDtoMapper;
 import com.ngtr.forum.service.AuthService;
 import com.ngtr.forum.service.RefreshTokenService;
 
@@ -46,16 +48,14 @@ public class AuthController {
 		return new ResponseEntity<>(getAccountActivatedHtml(), HttpStatus.OK);
 	}
 	
-	private String getAccountActivatedHtml() {
-		StringBuffer sb = new StringBuffer();
-		sb.append("<br/>");
-		sb.append("Your account has been activated");
-		sb.append("<br/><br/>");
-		sb.append("You can now now <a href=\"" + domain + "login\">login</a> to your account");
-		
-		return sb.toString();
+	@GetMapping("/user/details")
+	public ResponseEntity<CurrentUserDetails> getCurrentUserDetails() {
+		return ResponseEntity
+				.status(HttpStatus.OK)
+				.body(CurrentUserDetailsDtoMapper.toDto(authService.getCurrentUser()))
+				;
 	}
-
+	
 	@PostMapping("/login")
 	public AuthenticationResponse login(@RequestBody LoginRequest loginRequest) throws Exception {
 		return authService.login(loginRequest);
@@ -102,4 +102,24 @@ public class AuthController {
 				.body("Verification code verified")
 				;
 	}
+	
+	@PostMapping("/password/reset")
+	public ResponseEntity<String> resetPassword(@RequestBody PasswordResetVerificationCodeRequest passwordResetVerificationCodeRequest) {
+		authService.resetPassword(passwordResetVerificationCodeRequest);
+		return ResponseEntity
+				.status(HttpStatus.OK)
+				.body("Verification code verified")
+				;
+	}
+	
+	private String getAccountActivatedHtml() {
+		StringBuffer sb = new StringBuffer();
+		sb.append("<br/>");
+		sb.append("Your account has been activated");
+		sb.append("<br/><br/>");
+		sb.append("You can now now <a href=\"" + domain + "login\">login</a> to your account");
+		
+		return sb.toString();
+	}
 }
+
